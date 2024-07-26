@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section class="display-container">
+        <h1>To-Do List</h1>
+        <div class="add-container">
+            <label for="input-task"></label>
+            <input id="input-task" placeholder="What is your next task?">
+            <button id="add-task-button" type="submit" style="text-transform: uppercase">Add Task</button>
+        </div>
+        <div class="task-container">
+            <ul id="task-list" style="list-style: none">
+
+            </ul>
+        </div>
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+
+
+
+
+    </section>
+<script src="./toDoList.js"></script>
+</body>
+</html>
+<script>
+    let addTaskButton = document.getElementById("add-task-button");
+let taskNameInput = document.getElementById("input-task");
+let taskListElement = document.getElementById("task-list");
+
+class Task {
+    constructor(
+        id,
+        description,
+        completed = false
+    ) {
+        this.id = id;
+        this.description = description;
+        this.completed = completed;
+    }
+}
+
+let taskList = JSON.parse(localStorage.getItem("tasks")) || [];
+
+let taskId = 0;
+let findMaxId = Math.max(...taskList.map(task => task.id));
+
+if (findMaxId !== -Infinity) {
+    taskId = findMaxId;
+}
+
+addTaskButton.addEventListener("click", function () {
+    addTask();
+});
+
+taskNameInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        addTask();
+    }
+});
+
+function renderList() {
+    console.log(taskList);
+    console.log(JSON.parse(
+        localStorage.getItem("tasks")
+    ));
+    taskListElement.innerHTML = "";
+    taskList.forEach(task => {
+        let newTaskElement = document.createElement("li");
+
+        newTaskElement.innerHTML = `
+      <div class="checkbox-task">
+        <input type="checkbox" id="${task.id}" name="checkbox" ${task.completed ? "checked" : ""}>
+        <label for="${task.id}"></label>
+        <span class="task">${task.description}</span>
+      </div>
+      <button class="delete-btn" type="button">
+        <div class="closeModal"></div>
+      </button>`;
+
+        if (task.completed) {
+            newTaskElement.classList.add("completed");
+        } else {
+            newTaskElement.classList.remove("completed");
+        }
+        const totalTasks = taskList.length;
+        const completedTasks = taskList.filter(task => task.completed).length;
+        const progressPercent = (completedTasks / totalTasks) * 100;
+        const progressBar = document.querySelector(".progress");
+        progressBar.style.width = `${progressPercent}%`;
+        taskListElement.appendChild(newTaskElement);
+        taskNameInput.value = "";
+
+        let inputCheckbox = newTaskElement.querySelector('[name="checkbox"]');
+        inputCheckbox.addEventListener('click', function () {
+            task.completed = inputCheckbox.checked;
+
+            sortTaskList();
+            saveTaskList();
+            renderList();
+        });
+
+        let deleteButton = newTaskElement.querySelector(".delete-btn");
+        deleteButton.addEventListener("click", function () {
+            taskList = taskList.filter(taskToFilter => {
+                return taskToFilter.id !== task.id;
+            });
+            saveTaskList();
+            renderList();
+        });
+    });
+}
+
+function addTask() {
+    let taskName = taskNameInput.value.trim();
+    if (taskName !== "") {
+        taskId++;
+        taskList.push(new Task(taskId, taskName));
+        sortTaskList();
+        saveTaskList();
+        renderList();
+    }
+    else {
+        
+        alert("Please fill in the task description.");
+    }
+}
+
+function saveTaskList() {
+    localStorage.setItem("tasks", JSON.stringify(taskList));
+}
+
+function sortTaskList() {
+    taskList.sort(
+        (activeTask, completedTask) =>
+            activeTask.completed - completedTask.completed
+    );
+}
+
+renderList();
+</script>
+<style>
+    * {
+        margin: 0;
+        font-family: sans-serif;
+    }
+
+    .display-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100vw;
+        min-height: 100vh;
+        background-color: #1a1a1a; /* Изменили цвет фона на темно-серый */
+    }
+
+    h1 {
+        font-size: 54px;
+        font-weight: bold;
+        color: white;
+        margin: 5% 0 0;
+    }
+
+.add-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 50vw;
+    height: 50px;
+    background-color: white;
+    border-radius: 15px;
+    padding: 5px 15px 5px 0;
+    margin-top: 40px;
+}
+input[type=checkbox]:checked + label + span {
+        text-decoration: line-through;
+        color: #00cc00; /* Изменили цвет выполненных задач на зеленоватый */
+    }
+#input-task {
+    width: 80%;
+    height: 100%;
+    border: none;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0);
+    outline: none;
+    caret-color: #a18aff;
+    font-size: 20px;
+    line-height: 10px;
+    font-weight: normal;
+    color: #717072;
+}
+
+#input-task::placeholder {
+    opacity: 0.5;
+}
+
+#add-task-button {
+    width: 14%;
+    height: 85%;
+    border: #a18aff 2px solid;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0);
+    color: #a18aff;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#add-task-button:active {
+    background-color: #a18aff;
+    color: white;
+}
+
+.task-container {
+    margin: 40px 0;
+    width: 50%;
+}
+
+.task-container ul {
+    display: flex;
+    flex-direction: column;
+    padding-left: 0;
+}
+
+.checkbox-task span {
+    margin-left: 10px;
+}
+
+.task-container li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    height: 50px;
+    margin: 10px 0;
+    padding: 5px 15px;
+    border-radius: 15px;
+    color: #717072;
+    font-size: 16px;
+}
+
+input[type="checkbox"] {
+    border: #a18aff 2px solid;
+    width: 20px;
+    height: 20px;
+    vertical-align: bottom;
+}
+
+.delete-btn {
+    border: #a18aff solid 2px;
+    background-color: rgba(255, 255, 255, 0);
+    border-radius: 30px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.closeModal {
+    position: absolute;
+    cursor: pointer;
+}
+
+.closeModal::before,
+.closeModal::after {
+    content: '';
+    position: absolute;
+    display: block;
+    top: -1px;
+    width: 15px;
+    height: 3px;
+    background-color: #a18aff;
+}
+
+.closeModal::before {
+    transform: rotate(45deg);
+}
+
+.closeModal::after {
+    transform: rotate(-45deg);
+}
+
+.delete-btn:active {
+    background-color: #a18aff;
+}
+
+.delete-btn:active .closeModal::before {
+    background-color: white;
+}
+
+.delete-btn:active .closeModal::after {
+    background-color: white;
+}
+
+input[type=checkbox]:checked + label + span {
+    text-decoration: line-through;
+}
+
+input[type=checkbox] + label + span {
+    text-decoration: none;
+}
+
+.completed {
+    opacity: .5;
+}
+
+
+
+
+
+.progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #333;
+            margin-top: 200px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: #00cc00;
+            width: 0;
+            transition: width 0.3s ease; /* Плавное изменение шкалы */
+        }
+
+        .task-counter {
+            margin-top: 100px;
+            color: white;
+            font-size: 16px;
+        }
+
+
+
+</style>
